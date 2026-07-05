@@ -1,0 +1,526 @@
+"use client";
+
+import {
+  ArrowRight,
+  BarChart3,
+  BookOpen,
+  Building2,
+  Check,
+  FileText,
+  Gift,
+  GraduationCap,
+  Headphones,
+  Heart,
+  IndianRupee,
+  Landmark,
+  MapPin,
+  Menu,
+  Search,
+  ShieldCheck,
+  SlidersHorizontal,
+  Star,
+  Users,
+  type LucideIcon,
+} from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
+
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Slider } from "@/components/ui/slider";
+import {
+  cityOptions,
+  collegeTypeOptions,
+  colleges,
+  courseOptions,
+  formatLPA,
+  placementPreferences,
+  stateOptions,
+} from "@/lib/college-data";
+import {
+  COLLEGE_STATE_EVENT,
+  compareState,
+  defaultSearchFilters,
+  searchState,
+  type SearchFilters,
+  wishlistState,
+} from "@/lib/college-state";
+
+const navItems = [
+  { label: "Home", href: "/" },
+  { label: "Colleges", href: "/colleges" },
+  { label: "Compare", href: "/compare" },
+  { label: "Guides", href: "/guides" },
+  { label: "Scholarships", href: "/scholarships" },
+  { label: "About Us", href: "/about-us" },
+];
+
+const featureItems = [
+  { icon: IndianRupee, title: "Budget Colleges", description: "Find colleges within your affordability" },
+  { icon: BarChart3, title: "Compare Colleges", description: "Side-by-data comparison of key factors" },
+  { icon: ArrowRight, title: "Placement Analytics", description: "Detailed placement state and top recruiters" },
+  { icon: FileText, title: "Fee Breakdown", description: "Complete fee structure transparency" },
+  { icon: Gift, title: "Scholarship Info", description: "Find scholarships you are eligible for" },
+  { icon: Headphones, title: "Admission Support", description: "Expert guidance for admissions" },
+];
+
+const collegeLabels = ["Best Value", "Top Placement", "Most Affordable", "Top Private"];
+
+const howItWorks = [
+  {
+    icon: GraduationCap,
+    title: "Select Course",
+    description: "Choose your preferred course and specialization",
+  },
+  {
+    icon: SlidersHorizontal,
+    title: "Set Preference",
+    description: "Set your budget, location and other preferences",
+  },
+  {
+    icon: Landmark,
+    title: "Compare Colleges",
+    description: "Compare colleges side-by-side on key factors",
+  },
+  {
+    icon: Headphones,
+    title: "Get Support",
+    description: "Get admission guidance and expert support",
+  },
+];
+
+export default function Index() {
+  const router = useRouter();
+  const [filters, setFilters] = useState<SearchFilters>(defaultSearchFilters);
+  const [compareCount, setCompareCount] = useState(0);
+  const [wishlistCount, setWishlistCount] = useState(0);
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  useEffect(() => {
+    const sync = () => {
+      setFilters(searchState.get());
+      setCompareCount(compareState.get().length);
+      setWishlistCount(wishlistState.get().length);
+    };
+
+    sync();
+    window.addEventListener(COLLEGE_STATE_EVENT, sync);
+    window.addEventListener("storage", sync);
+    return () => {
+      window.removeEventListener(COLLEGE_STATE_EVENT, sync);
+      window.removeEventListener("storage", sync);
+    };
+  }, []);
+
+  const topColleges = useMemo(() => colleges.slice(0, 4), []);
+
+  const updateFilter = <K extends keyof SearchFilters>(key: K, value: SearchFilters[K]) => {
+    setFilters((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const submitSearch = () => {
+    searchState.set(filters);
+    router.push("/colleges");
+  };
+
+  return (
+    <div className="min-h-screen bg-[#f4eddd] text-[#172325]">
+      <header className="sticky top-0 z-50 bg-[#121c20] text-[#f7efd9] shadow-lg shadow-black/20">
+        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
+          <Link href="/" className="flex items-center gap-2 text-lg font-semibold text-[#d6c091]">
+            <GraduationCap className="h-6 w-6" />
+            College Visitor
+          </Link>
+
+          <nav className="hidden items-center gap-2 lg:flex">
+            {navItems.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`rounded-md px-4 py-2 text-sm font-medium transition-colors ${
+                  item.href === "/" ? "bg-[#1d706d] text-white" : "text-[#f7efd9] hover:bg-white/10"
+                }`}
+              >
+                {item.label}
+              </Link>
+            ))}
+          </nav>
+
+          <div className="hidden items-center gap-2 md:flex">
+            <Link href="/compare" className="flex h-9 items-center gap-2 rounded-md border border-white/15 px-3 text-sm">
+              <BarChart3 className="h-4 w-4" />
+              {compareCount}
+            </Link>
+            <Link href="/wishlist" className="flex h-9 items-center gap-2 rounded-md border border-white/15 px-3 text-sm">
+              <Heart className="h-4 w-4" />
+              {wishlistCount}
+            </Link>
+            <Button variant="outline" size="sm" className="border-white/20 bg-transparent text-[#f7efd9] hover:bg-white/10 hover:text-white">
+              Sign In
+            </Button>
+            <Link href="/apply">
+              <Button size="sm" className="bg-[#1d706d] text-white hover:bg-[#185d5a]">
+                Apply Through Us
+              </Button>
+            </Link>
+          </div>
+
+          <button
+            type="button"
+            className="grid h-9 w-9 place-items-center rounded-md border border-white/15 lg:hidden"
+            aria-label="Toggle menu"
+            onClick={() => setMenuOpen((open) => !open)}
+          >
+            <Menu className="h-5 w-5" />
+          </button>
+        </div>
+
+        {menuOpen ? (
+          <div className="fixed inset-x-0 bottom-0 z-[60] border-t border-white/10 bg-[#121c20] px-4 pb-6 pt-4 shadow-2xl shadow-black/40 lg:hidden">
+            <nav className="grid gap-1">
+              {navItems.map((item) => (
+                <Link key={item.href} href={item.href} onClick={() => setMenuOpen(false)} className="rounded-md px-3 py-2 text-sm hover:bg-white/10">
+                  {item.label}
+                </Link>
+              ))}
+              <Link href="/apply" onClick={() => setMenuOpen(false)} className="pt-2">
+                <Button className="w-full bg-[#1d706d] text-white hover:bg-[#185d5a]">Apply Through Us</Button>
+              </Link>
+            </nav>
+          </div>
+        ) : null}
+      </header>
+
+      <main>
+        <section className="relative overflow-hidden bg-[#eee5cf]">
+          <div
+            className="absolute inset-y-0 right-0 hidden w-[56%] bg-[#172326] lg:block"
+            style={{ clipPath: "polygon(18% 0, 100% 0, 100% 100%, 0 100%)" }}
+          />
+          <div className="absolute -left-28 bottom-[-145px] h-[390px] w-[390px] rounded-full bg-[#d8c79e]/50" />
+
+<div className="absolute -left-5 bottom-0 h-[300px] w-[220px] rotate-[-24deg] rounded-[55%] border-[34px] border-[#c7b48a]/70" />
+          <div className="absolute -left-12 top-[-110px] h-[260px] w-[390px] rounded-[50%] bg-[#e0d0aa]" />
+          <div className="absolute left-[31%] top-[-170px] hidden h-[340px] w-[520px] rounded-full bg-[#d8c79e]/70 lg:block" />
+          <div className="absolute bottom-[-82px] right-[-58px] h-40 w-72 rounded-tl-full bg-[#e0d0aa]" />
+          <div className="absolute left-4 top-4 h-40 w-32 opacity-40 [background-image:radial-gradient(#b7ab8b_1.5px,transparent_1.5px)] [background-size:14px_14px]" />
+          <div className="absolute inset-y-0 left-[48%] hidden w-28 bg-gradient-to-r from-transparent via-[#efe6cf]/70 to-transparent blur-xl lg:block" />
+
+          <div className="relative mx-auto grid max-w-7xl gap-7 px-4 py-6 sm:px-6 lg:grid-cols-[0.92fr_1.08fr] lg:items-center lg:py-5">
+            <div className="space-y-6">
+              <Badge className="gap-2 rounded-full border-[#d6c091]/40 bg-[#f4eddd]/90 px-4 py-2 text-sm text-[#172325] shadow-none hover:bg-[#f4eddd]/90">
+                <ShieldCheck className="h-4 w-4 text-[#1d706d]" />
+                India&apos;s Most Trusted College Discovery Platform
+              </Badge>
+
+              <div className="space-y-3">
+  <h1 className="max-w-2xl text-[2.35rem] font-extrabold leading-[1.08] tracking-[-0.04em] text-[#121c20] sm:text-5xl lg:text-[3.25rem] xl:text-[3.55rem]">
+  Find Your{" "}
+  <span className="text-[#1d706d]">
+    Dream College
+  </span>
+  <br />
+  <span className="text-[#121c20]">
+    Within Your Family Budget
+  </span>
+</h1>
+  <p className="max-w-lg text-sm leading-6 text-[#172325] sm:text-base">
+    Discover colleges based on affordability, placements, scholarships and career outcomes.
+  </p>
+</div>
+
+              <div className="grid max-w-2xl grid-cols-2 gap-4 sm:grid-cols-4">
+                <HeroStat icon={Building2} value="1500+" label="Colleges" />
+                <HeroStat icon={Users} value="50,000+" label="Students Helped" />
+                <HeroStat icon={GraduationCap} value="₹20Cr+" label="Scholarships" />
+                <HeroStat icon={Star} value="AI" label="Powered" />
+              </div>
+            </div>
+
+            <Card className="rounded-2xl border border-white/15 bg-[#2a3639]/90 p-4 text-[#f8f1df] shadow-2xl shadow-black/40 backdrop-blur sm:p-5 lg:ml-4">
+              <div className="grid gap-3 md:grid-cols-2">
+                <SearchSelect
+                  icon={BookOpen}
+                  label="Course"
+                  value={filters.course}
+                  onValueChange={(value) => updateFilter("course", value as SearchFilters["course"])}
+                  options={courseOptions}
+                />
+                <SearchSelect
+                  icon={MapPin}
+                  label="State (Optional)"
+                  value={filters.state}
+                  onValueChange={(value) => updateFilter("state", value)}
+                  options={["Any", ...stateOptions]}
+                />
+                <SearchSelect
+  icon={Building2}
+  label="City (Optional)"
+  value={filters.city}
+  onValueChange={(value) => updateFilter("city", value)}
+  options={[
+    "Any",
+    ...Array.from(
+      new Set(
+        colleges
+          .filter((college) => !filters.state || college.state === filters.state)
+          .map((college) => college.city)
+      )
+    ),
+  ]}
+/>
+                <SearchSelect
+                  icon={BarChart3}
+                  label="Placement Preference"
+                  value={filters.placementPreference}
+                  onValueChange={(value) => updateFilter("placementPreference", value as SearchFilters["placementPreference"])}
+                  options={placementPreferences}
+                />
+              </div>
+
+              <div className="mt-4 grid gap-4 md:grid-cols-[1fr_150px] md:items-end">
+                <div className="space-y-3">
+                  <p className="text-xs font-semibold text-[#f8f1df]">Budget Range (Annual)</p>
+                  <div className="flex items-center gap-3 text-xs text-[#f8f1df]/80">
+                    <span>₹50K</span>
+                    <Slider
+                      value={[filters.budget]}
+                      min={50000}
+                      max={2000000}
+                      step={25000}
+                      onValueChange={(value) => updateFilter("budget", value[0])}
+                    />
+                    <span>₹20L</span>
+                  </div>
+                </div>
+                <div className="rounded-lg bg-[#f4eddd]/15 px-4 py-3">
+                  <p className="text-xs text-[#f8f1df]/70">Selected Budget</p>
+                  <p className="text-xl font-bold text-[#f8f1df]">{formatHomeINR(filters.budget)}</p>
+                </div>
+              </div>
+
+              <div className="mt-4 grid gap-4 lg:grid-cols-[1fr_auto]">
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold text-[#f8f1df]">College Type</p>
+                  <div className="flex flex-wrap gap-2">
+                    {collegeTypeOptions.map((type) => {
+                      const checked = filters.collegeTypes.includes(type);
+                      return (
+                        <button
+                          key={type}
+                          type="button"
+                          className={`rounded-full border px-3 py-2 text-xs font-medium transition-colors ${
+                            checked ? "border-[#e0cf9f] bg-[#e0cf9f] text-[#172325]" : "border-white/20 bg-white/5 text-[#f8f1df]"
+                          }`}
+                          onClick={() => {
+                            updateFilter(
+                              "collegeTypes",
+                              checked
+                                ? filters.collegeTypes.filter((item) => item !== type)
+                                : [...filters.collegeTypes, type],
+                            );
+                          }}
+                        >
+                          {type}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold text-[#f8f1df]">Scholarship</p>
+                  <button
+                    type="button"
+                    className={`rounded-full border px-4 py-2 text-xs font-medium transition-colors ${
+                      filters.scholarshipOnly ? "border-[#e0cf9f] bg-[#e0cf9f] text-[#172325]" : "border-white/20 bg-white/5 text-[#f8f1df]"
+                    }`}
+                    onClick={() => updateFilter("scholarshipOnly", !filters.scholarshipOnly)}
+                  >
+                    Scholarship Available
+                  </button>
+                </div>
+              </div>
+
+              <Button className="mt-4 h-12 w-full gap-2 rounded-lg bg-[#121c20] text-[#f8f1df] hover:bg-[#0b1316]" onClick={submitSearch}>
+                <Search className="h-5 w-5" />
+                Find My College
+              </Button>
+            </Card>
+          </div>
+        </section>
+
+        <section className="mx-auto grid max-w-7xl gap-5 px-4 py-5 sm:px-6 md:grid-cols-2 xl:grid-cols-6">
+          {featureItems.map((feature) => (
+            <div key={feature.title} className="flex items-start gap-3">
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-[#1d706d]">
+                <feature.icon className="h-6 w-6" />
+              </span>
+              <div>
+                <h3 className="text-sm font-bold text-[#172325]">{feature.title}</h3>
+                <p className="mt-1 text-xs leading-5 text-[#324447]">{feature.description}</p>
+              </div>
+            </div>
+          ))}
+        </section>
+
+        <section className="mx-auto max-w-7xl px-4 pb-5 sm:px-6">
+          <div className="mb-4 flex items-end justify-between gap-4">
+            <div className="flex items-center gap-2">
+              <span className="grid h-7 w-7 place-items-center rounded-md border border-[#d8cdaa] text-[#1d706d]">
+                <Star className="h-4 w-4" />
+              </span>
+              <h2 className="text-2xl font-bold text-[#172325]">Top Colleges</h2>
+            </div>
+            <Link href="/colleges" className="hidden items-center gap-1 text-sm font-semibold text-[#1d706d] sm:inline-flex">
+              View all colleges <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+
+          <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+            {topColleges.map((college, index) => (
+              <Card key={college.id} className="overflow-hidden rounded-xl border-[#d8cdaa] bg-[#fbf6ea] shadow-md shadow-[#b8a67a]/20">
+                <div className="relative">
+                  <img src={college.image} alt={`${college.name} campus`} className="h-32 w-full object-cover" loading="lazy" width={1280} height={832} />
+                  <span className="absolute left-3 top-3 rounded-md bg-[#1d706d] px-2 py-1 text-[10px] font-bold uppercase text-white">
+                    {collegeLabels[index]}
+                  </span>
+                  <span className="absolute right-3 top-3 grid h-8 w-8 place-items-center rounded-full bg-[#f4eddd] text-[#1d706d] shadow">
+                    <Heart className="h-4 w-4" />
+                  </span>
+                  <span className="absolute bottom-0 right-0 rounded-tl-md bg-[#1d706d] px-2 py-1 text-xs font-bold text-white">#{index + 1}</span>
+                </div>
+                <div className="p-3">
+                  <h3 className="line-clamp-1 text-base font-bold text-[#172325]">{college.name}</h3>
+                  <p className="mt-1 flex items-center gap-1 text-xs text-[#536062]">
+                    <MapPin className="h-3.5 w-3.5" />
+                    {college.city}, {college.state}
+                  </p>
+                  <p className="mt-1 flex items-center gap-1 text-sm font-medium text-[#172325]">
+                    <Star className="h-4 w-4 fill-amber-500 text-amber-500" />
+                    {college.rating} <span className="text-xs font-normal text-[#536062]">({800 + index * 60} reviews)</span>
+                  </p>
+
+                  <div className="mt-3 grid grid-cols-3 divide-x divide-[#d8cdaa] text-center">
+                    <CollegeMetric value={formatHomeINR(college.annualCost)} label="Annual Fee" />
+                    <CollegeMetric value={formatLPA(college.averagePackageLpa)} label="Avg. Package" />
+                    <CollegeMetric value={`${college.placementRate}%`} label="Placement" />
+                  </div>
+
+                  <div className="mt-3 grid grid-cols-2 gap-2">
+                    <label className="inline-flex h-9 items-center justify-center gap-2 rounded-md border border-[#d8cdaa] text-xs font-medium text-[#172325]">
+                      <Checkbox className="h-4 w-4" />
+                      Compare
+                    </label>
+                    <Link href={`/college/${college.slug}`}>
+                      <Button className="h-9 w-full gap-1 rounded-md bg-[#1d706d] text-xs text-white hover:bg-[#185d5a]">
+                        View Details
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+        </section>
+
+        <section className="mx-auto max-w-7xl px-4 pb-10 sm:px-6">
+          <div className="mb-4 flex items-center gap-2">
+            <span className="grid h-7 w-7 place-items-center rounded-md border border-[#d8cdaa] text-[#1d706d]">
+              <Headphones className="h-4 w-4" />
+            </span>
+            <h2 className="text-2xl font-bold text-[#172325]">How It Works</h2>
+          </div>
+          <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+            {howItWorks.map((step, index) => (
+              <Card key={step.title} className="rounded-xl border-[#d8cdaa] bg-[#fbf6ea] p-4 shadow-sm">
+                <div className="flex items-center gap-4">
+                  <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#1d706d] text-sm font-bold text-white">
+                    {index + 1}
+                  </span>
+                  <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-[#efe4c8] text-[#1d706d]">
+                    <step.icon className="h-6 w-6" />
+                  </span>
+                  <div>
+                    <h3 className="text-sm font-bold text-[#172325]">{step.title}</h3>
+                    <p className="mt-1 text-xs leading-5 text-[#536062]">{step.description}</p>
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+        </section>
+      </main>
+    </div>
+  );
+}
+
+function HeroStat({ icon: Icon, value, label }: { icon: LucideIcon; value: string; label: string }) {
+  return (
+    <div className="flex items-center gap-2">
+      <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-[#f4eddd] text-[#1d706d] shadow">
+        <Icon className="h-6 w-6" />
+      </span>
+      <div>
+        <p className="text-lg font-bold text-[#172325]">{value}</p>
+        <p className="text-xs text-[#172325]">{label}</p>
+      </div>
+    </div>
+  );
+}
+
+function SearchSelect({
+  icon: Icon,
+  label,
+  value,
+  onValueChange,
+  options,
+}: {
+  icon: LucideIcon;
+  label: string;
+  value: string;
+  onValueChange: (value: string) => void;
+  options: string[];
+}) {
+  const current = value || "Any";
+
+  return (
+    <div className="space-y-2">
+      <p className="text-xs font-semibold text-[#f8f1df]">{label}</p>
+      <Select value={current} onValueChange={(next) => onValueChange(next === "Any" ? "" : next)}>
+        <SelectTrigger className="h-11 rounded-md border-white/20 bg-white/10 text-[#f8f1df] shadow-none">
+          <div className="flex min-w-0 items-center gap-3">
+            <Icon className="h-4 w-4 shrink-0 text-[#e0cf9f]" />
+            <SelectValue placeholder="Select" />
+          </div>
+        </SelectTrigger>
+        <SelectContent>
+          {options.map((item) => (
+            <SelectItem key={item} value={item}>
+              {item}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  );
+}
+
+function CollegeMetric({ value, label }: { value: string; label: string }) {
+  return (
+    <div className="px-2">
+      <p className="truncate text-xs font-bold text-[#172325]">{value}</p>
+      <p className="mt-1 text-[11px] text-[#536062]">{label}</p>
+    </div>
+  );
+}
+
+function formatHomeINR(value: number) {
+  if (value >= 10000000) return `\u20b9${(value / 10000000).toFixed(1)}Cr`;
+  if (value >= 100000) return `\u20b9${(value / 100000).toFixed(1)}L`;
+  return `\u20b9${value.toLocaleString("en-IN")}`;
+}

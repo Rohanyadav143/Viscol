@@ -1,0 +1,288 @@
+"use client";
+
+import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis } from "recharts";
+import { Heart, MapPin, ShieldCheck, Star } from "lucide-react";
+import { useParams } from "next/navigation";
+import { useState } from "react";
+import { toast } from "sonner";
+
+import { AppLayout } from "@/components/college/layout";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { formatINR, formatLPA, getCollegeBySlug } from "@/lib/college-data";
+import { compareState, wishlistState } from "@/lib/college-state";
+
+export default function CollegeDetailPage() {
+  const params = useParams<{ slug: string }>();
+  const college = getCollegeBySlug(params.slug);
+  const [activeImage, setActiveImage] = useState(0);
+
+  if (!college) {
+    return (
+      <AppLayout>
+        <div className="rounded-2xl border border-border bg-card p-8 text-center">
+          <h1 className="text-2xl font-semibold">College not found</h1>
+        </div>
+      </AppLayout>
+    );
+  }
+
+  const placementChart = [
+    { name: "Avg Package", value: college.averagePackageLpa },
+    { name: "Highest", value: college.highestPackageLpa },
+    { name: "Placement %", value: college.placementRate / 10 },
+  ];
+
+  const budgetStars = `${"★".repeat(college.budgetScore)}${"☆".repeat(5 - college.budgetScore)}`;
+
+  return (
+    <AppLayout>
+      <section className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+        <div className="space-y-3">
+          <img
+            src={college.gallery[activeImage]}
+            alt={`${college.name} image ${activeImage + 1}`}
+            className="h-[320px] w-full rounded-2xl object-cover"
+            width={1280}
+            height={832}
+          />
+          <div className="grid grid-cols-4 gap-2">
+            {college.gallery.map((image, index) => (
+              <button
+                key={`${image}-${index}`}
+                type="button"
+                className={`overflow-hidden rounded-lg border ${activeImage === index ? "border-primary" : "border-border"}`}
+                onClick={() => setActiveImage(index)}
+              >
+                <img src={image} alt={`${college.name} thumbnail ${index + 1}`} className="h-16 w-full object-cover" loading="lazy" width={1280} height={832} />
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <Card className="premium-card p-5">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <div className="mb-2 inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/12 font-semibold text-primary">
+                {college.logoText}
+              </div>
+              <h1 className="text-2xl font-semibold">{college.name}</h1>
+              <p className="mt-1 inline-flex items-center gap-1 text-sm text-muted-foreground">
+                <MapPin className="h-4 w-4" /> {college.city}, {college.state}
+              </p>
+            </div>
+            <div className="inline-flex items-center gap-1 rounded-lg bg-secondary px-2 py-1 text-sm font-medium">
+              <Star className="h-4 w-4 fill-primary text-primary" /> {college.rating}/5
+            </div>
+          </div>
+
+          <div className="mt-3 flex flex-wrap gap-2">
+            {college.accreditation.map((item) => (
+              <Badge key={item} variant="outline">
+                {item}
+              </Badge>
+            ))}
+            {college.scholarshipAvailable ? <Badge>Scholarship Available</Badge> : null}
+          </div>
+
+          <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+            <Metric label="Annual Cost" value={formatINR(college.annualCost)} />
+            <Metric label="Average Package" value={formatLPA(college.averagePackageLpa)} />
+            <Metric label="Highest Package" value={formatLPA(college.highestPackageLpa)} />
+            <Metric label="Placement Rate" value={`${college.placementRate}%`} />
+          </div>
+
+          <div className="mt-5 grid gap-2 sm:grid-cols-3">
+            <Button onClick={() => toast.success("Application initiated")}>Apply Now</Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                const current = compareState.get();
+                const next = current.includes(college.id) ? current : [...current, college.id].slice(0, 3);
+                compareState.set(next);
+                toast.success("Added to compare");
+              }}
+            >
+              Compare
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                const current = wishlistState.get();
+                const next = current.includes(college.id)
+                  ? current.filter((item) => item !== college.id)
+                  : [...current, college.id];
+                wishlistState.set(next);
+                toast.success("Saved");
+              }}
+            >
+              <Heart className="mr-1 h-4 w-4" /> Save
+            </Button>
+          </div>
+        </Card>
+      </section>
+
+      <section className="mt-6">
+        <Tabs defaultValue="overview">
+          <TabsList className="h-auto flex-wrap gap-2 rounded-xl p-1">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="fees">Fees</TabsTrigger>
+            <TabsTrigger value="placements">Placements</TabsTrigger>
+            <TabsTrigger value="hostel">Hostel</TabsTrigger>
+            <TabsTrigger value="scholarships">Scholarships</TabsTrigger>
+            <TabsTrigger value="gallery">Gallery</TabsTrigger>
+            <TabsTrigger value="reviews">Reviews</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="overview">
+            <Card className="premium-card mt-3 p-5">
+              <h2 className="text-xl font-semibold">Overview</h2>
+              <p className="mt-2 text-muted-foreground">{college.description}</p>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                <Metric label="Est. Year" value={`${college.establishedYear}`} />
+                <Metric label="Affiliation" value={college.affiliation} />
+                <Metric label="Approvals" value={college.approvals.join(", ")} />
+                <Metric label="Campus Area" value={`${college.campusAreaAcres} Acres`} />
+              </div>
+              <div className="mt-4">
+                <p className="text-sm text-muted-foreground">Courses Offered</p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {["B.Tech", "M.Tech", "MBA", "BCA", "MCA"].map((course) => (
+                    <Badge key={course} variant="secondary">
+                      {course}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="fees">
+            <Card className="premium-card mt-3 p-5">
+              <h2 className="text-xl font-semibold">Fee Structure</h2>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                <Metric label="Tuition Fee" value={formatINR(college.fees.tuition)} />
+                <Metric label="Hostel Fee" value={formatINR(college.fees.hostel)} />
+                <Metric label="Mess Fee" value={formatINR(college.fees.mess)} />
+                <Metric label="Exam Fee" value={formatINR(college.fees.exam)} />
+                <Metric label="Transport Fee" value={formatINR(college.fees.transport)} />
+                <Metric label="Total Annual Cost" value={formatINR(college.annualCost)} />
+                <Metric label="Total Course Cost" value={formatINR(college.courseCost)} />
+                <Metric label="Budget Score" value={budgetStars} />
+              </div>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="placements">
+            <Card className="premium-card mt-3 p-5">
+              <h2 className="text-xl font-semibold">Placement Insights</h2>
+              <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                <Metric label="Average Package" value={formatLPA(college.averagePackageLpa)} />
+                <Metric label="Highest Package" value={formatLPA(college.highestPackageLpa)} />
+                <Metric label="Placement Rate" value={`${college.placementRate}%`} />
+              </div>
+              <div className="mt-4 h-72 rounded-xl border border-border bg-background p-3">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={placementChart}>
+                    <XAxis dataKey="name" />
+                    <YAxis />
+                    <Bar dataKey="value" fill="var(--color-primary)" radius={[8, 8, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="mt-4">
+                <p className="text-sm text-muted-foreground">Top Recruiters</p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {college.recruiters.map((recruiter) => (
+                    <Badge key={recruiter} variant="outline">
+                      {recruiter}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="hostel">
+            <Card className="premium-card mt-3 p-5">
+              <h2 className="text-xl font-semibold">Hostel Facilities</h2>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {college.hostelFacilities.map((item) => (
+                  <div key={item} className="inline-flex items-center gap-2 rounded-xl border border-border bg-background p-3 text-sm">
+                    <ShieldCheck className="h-4 w-4 text-primary" />
+                    {item}
+                  </div>
+                ))}
+              </div>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="scholarships">
+            <Card className="premium-card mt-3 p-5">
+              <h2 className="text-xl font-semibold">Scholarships</h2>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                {college.scholarships.map((item) => (
+                  <div key={item} className="rounded-xl border border-border bg-background p-4">
+                    <p className="font-medium">{item}</p>
+                    <p className="mt-1 text-sm text-muted-foreground">Eligibility and documentation support available.</p>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="gallery">
+            <Card className="premium-card mt-3 p-5">
+              <h2 className="text-xl font-semibold">Gallery</h2>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {college.gallery.map((image, index) => (
+                  <img
+                    key={`${image}-${index}`}
+                    src={image}
+                    alt={`${college.name} gallery ${index + 1}`}
+                    className="h-40 w-full rounded-xl object-cover"
+                    loading="lazy"
+                    width={1280}
+                    height={832}
+                  />
+                ))}
+              </div>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="reviews">
+            <Card className="premium-card mt-3 p-5">
+              <h2 className="text-xl font-semibold">Student Reviews</h2>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                {college.reviews.map((review, index) => (
+                  <Card key={`${review.student}-${index}`} className="rounded-xl border border-border bg-background p-4">
+                    <p className="font-medium">{review.student}</p>
+                    <p className="mt-1 text-sm text-muted-foreground">{review.comment}</p>
+                    <div className="mt-2 grid grid-cols-2 gap-2 text-xs text-muted-foreground">
+                      <p>Academics: {review.academics}/5</p>
+                      <p>Placements: {review.placements}/5</p>
+                      <p>Hostel: {review.hostel}/5</p>
+                      <p>Faculty: {review.faculty}/5</p>
+                      <p>Campus Life: {review.campusLife}/5</p>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </section>
+    </AppLayout>
+  );
+}
+
+function Metric({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl border border-border bg-background p-3">
+      <p className="text-xs text-muted-foreground">{label}</p>
+      <p className="mt-1 text-sm font-semibold">{value}</p>
+    </div>
+  );
+}
