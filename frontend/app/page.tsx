@@ -19,6 +19,7 @@ import {
   SlidersHorizontal,
   Star,
   Users,
+  X,
   type LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
@@ -226,12 +227,22 @@ export default function Index() {
             aria-label="Toggle menu"
             onClick={() => setMenuOpen((open) => !open)}
           >
-            <Menu className="h-5 w-5" />
+            {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
         </div>
 
         {menuOpen ? (
           <div className="fixed inset-x-0 bottom-0 z-[60] border-t border-white/10 bg-[#121c20] px-4 pb-6 pt-4 shadow-2xl shadow-black/40 lg:hidden">
+            <div className="mb-2 flex justify-end">
+              <button
+                type="button"
+                className="grid h-9 w-9 place-items-center rounded-md border border-white/15 text-[#f7efd9] hover:bg-white/10"
+                aria-label="Close menu"
+                onClick={() => setMenuOpen(false)}
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
             <nav className="grid gap-1">
               {navItems.map((item) => (
                 <Link key={item.href} href={item.href} onClick={() => setMenuOpen(false)} className="rounded-md px-3 py-2 text-sm hover:bg-white/10">
@@ -306,7 +317,7 @@ export default function Index() {
               <div className="grid max-w-2xl grid-cols-2 gap-4 sm:grid-cols-4">
                 <HeroStat icon={Building2} value="1500+" label="Colleges" />
                 <HeroStat icon={Users} value="50,000+" label="Students Helped" />
-                <HeroStat icon={GraduationCap} value="Γé╣20Cr+" label="Scholarships" />
+                <HeroStat icon={GraduationCap} value="20Cr+" label="Scholarships" />
                 <HeroStat icon={Star} value="AI" label="Powered" />
               </div>
             </div>
@@ -356,7 +367,7 @@ export default function Index() {
                 <div className="space-y-3">
                   <p className="text-xs font-semibold text-[#f8f1df]">Budget Range (Annual)</p>
                   <div className="flex items-center gap-3 text-xs text-[#f8f1df]/80">
-                    <span>Γé╣50K</span>
+                    <span>50K</span>
                     <Slider
                       value={[filters.budget]}
                       min={50000}
@@ -364,7 +375,7 @@ export default function Index() {
                       step={25000}
                       onValueChange={(value) => updateFilter("budget", value[0])}
                     />
-                    <span>Γé╣20L</span>
+                    <span>20L</span>
                   </div>
                 </div>
                 <div className="rounded-lg bg-[#f4eddd]/15 px-4 py-3">
@@ -530,8 +541,8 @@ export default function Index() {
       </main>
 
       <footer className="border-t border-[#d6c091]/15 bg-[#101f21] text-[#f7efd9]">
-        <div className="mx-auto grid max-w-7xl gap-8 px-4 py-8 sm:px-6 lg:grid-cols-[1.3fr_1fr_1fr]">
-          <div>
+        <div className="mx-auto grid max-w-7xl grid-cols-2 gap-8 px-4 py-8 sm:px-6 lg:grid-cols-[1.3fr_1fr_1fr]">
+          <div className="col-span-2 lg:col-span-1">
             <Link href="/" className="inline-flex items-center gap-2 text-lg font-semibold text-[#d6c091]">
               <GraduationCap className="h-6 w-6" />
               College Visitor
