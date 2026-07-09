@@ -1,4 +1,4 @@
-﻿-- Drop old OTP storage from the previous auth approach.
+-- Drop old OTP storage from the previous auth approach.
 DROP TABLE IF EXISTS "otps";
 
 -- Move phone-based auth field to the new mobile field.
