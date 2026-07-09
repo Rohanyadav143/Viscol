@@ -105,6 +105,15 @@ body {
     sans-serif;
 }
 
+:where(a, button, [role="button"], [role="menuitem"], [role="option"], [role="tab"], [role="checkbox"], [data-slot="select-trigger"], [data-slot="dropdown-menu-trigger"]) {
+  cursor: pointer;
+}
+
+:where(button, [role="button"], [role="menuitem"], [role="option"], [role="tab"], [role="checkbox"], [data-slot="select-trigger"], [data-slot="dropdown-menu-trigger"]):disabled,
+:where([aria-disabled="true"], [data-disabled], [data-state="disabled"]) {
+  cursor: not-allowed;
+}
+
 /* =========================
    NEXT ROOT
 ========================= */

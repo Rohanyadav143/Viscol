@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { BarChart3, GraduationCap, Heart, Menu } from "lucide-react";
+import { BarChart3, GraduationCap, Heart, Menu, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -114,12 +114,22 @@ export function AppNavbar() {
           onClick={() => setOpen((prev) => !prev)}
           aria-label="Toggle menu"
         >
-          <Menu className="h-5 w-5" />
+          {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </button>
       </div>
 
       {open ? (
         <div className="fixed inset-x-0 bottom-0 z-[60] border-t border-white/10 bg-[#121c20] px-4 pb-6 pt-4 shadow-2xl shadow-black/40 lg:hidden">
+          <div className="mb-2 flex justify-end">
+            <button
+              type="button"
+              className="grid h-9 w-9 place-items-center rounded-md border border-white/15 text-[#f7efd9] hover:bg-white/10"
+              aria-label="Close menu"
+              onClick={() => setOpen(false)}
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
           <nav className="grid gap-1">
             {navItems.map((item) => (
               <Link

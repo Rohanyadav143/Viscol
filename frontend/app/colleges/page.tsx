@@ -172,8 +172,8 @@ export default function CollegesPage() {
                 <div className="space-y-2">
                   <p className="text-sm font-semibold text-[#f7efd9]">Budget Range (Annual)</p>
                   <div className="flex items-center justify-between text-xs text-[#d8cfb8]">
-                    <span>Γé╣50K</span>
-                    <span>Γé╣20L</span>
+                    <span>50K</span>
+                    <span>20L</span>
                   </div>
                   <Slider
                     value={[filters.budget]}
@@ -183,7 +183,7 @@ export default function CollegesPage() {
                     onValueChange={(value) => updateFilter("budget", value[0])}
                   />
                   <Badge className="rounded-md bg-[#d6c091] text-[#172325] hover:bg-[#d6c091]">
-                    Selected: Γé╣{filters.budget.toLocaleString("en-IN")}
+                    Selected:{filters.budget.toLocaleString("en-IN")}
                   </Badge>
                 </div>
 
