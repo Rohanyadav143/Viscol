@@ -10,7 +10,7 @@ import { AppLayout } from "@/components/college/layout";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { register } from "@/lib/auth-client";
+import { sendOtp, verifyOtp } from "@/lib/auth-client";
 
 const validateForm = (form: { name: string; mobile: string; email: string }) => {
   if (form.name.trim().length < 2) return "Name must be at least 2 characters";
@@ -32,6 +32,8 @@ function RegisterForm() {
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get("redirect") || "/colleges";
   const [form, setForm] = useState({ name: "", mobile: "", email: "" });
+  const [otp, setOtp] = useState("");
+  const [otpSent, setOtpSent] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -45,15 +47,39 @@ function RegisterForm() {
     setLoading(true);
     setError("");
     try {
-      await register({
+      await sendOtp({
         name: form.name.trim(),
         mobile: form.mobile.trim(),
         email: form.email.trim().toLowerCase(),
       });
-      toast.success("Registration complete");
-      router.push(redirectTo);
+      setOtpSent(true);
+      toast.success("OTP sent to your email");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to continue");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const onVerify = async () => {
+    if (!/^\d{6}$/.test(otp.trim())) {
+      setError("OTP must be 6 digits");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+    try {
+      await verifyOtp({
+        name: form.name.trim(),
+        mobile: form.mobile.trim(),
+        email: form.email.trim().toLowerCase(),
+        otp: otp.trim(),
+      });
+      toast.success("Login complete");
+      router.push(redirectTo);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to verify OTP");
     } finally {
       setLoading(false);
     }
@@ -78,14 +104,15 @@ function RegisterForm() {
             </span>
 
             <h1 className="mt-4 text-2xl font-bold text-white">
-              Register with College Visitor
+              Login with College Visitor
             </h1>
 
             <p className="mt-2 text-sm text-[#9bc9cc]">
-              Continue with your basic student details.
+              {otpSent ? `Enter the OTP sent to ${form.email.trim().toLowerCase()}.` : "Continue with your basic student details."}
             </p>
           </div>
 
+          {!otpSent ? (
           <div className="mx-auto w-[450px]">
             <label className="space-y-1.5">
               <span className="text-sm font-medium text-[#9bc9cc]">Full Name</span>
@@ -123,15 +150,51 @@ function RegisterForm() {
               />
             </label>
           </div>
+          ) : (
+          <div className="mx-auto w-[450px]">
+            <label className="space-y-1.5">
+              <span className="text-sm font-medium text-[#9bc9cc]">Email OTP</span>
+              <Input
+                className="h-11 border-[#285356] bg-[#0b2a2c] text-center text-lg tracking-[0.35em] text-white placeholder:text-[#8eb0b4]"
+                inputMode="numeric"
+                maxLength={6}
+                placeholder="000000"
+                value={otp}
+                onChange={(event) => setOtp(event.target.value.replace(/\D/g, ""))}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") onVerify();
+                }}
+              />
+            </label>
+
+            <div className="mt-3 flex items-center justify-between text-sm">
+              <button
+                type="button"
+                className="text-[#2aa6a0] hover:text-white"
+                disabled={loading}
+                onClick={() => {
+                  setOtpSent(false);
+                  setOtp("");
+                  setError("");
+                }}
+              >
+                Change details
+              </button>
+              <button type="button" className="text-[#2aa6a0] hover:text-white" disabled={loading} onClick={onSubmit}>
+                Resend OTP
+              </button>
+            </div>
+          </div>
+          )}
 
           {error ? <p className="mt-5 rounded-md bg-red-950/60 px-3 py-2 text-sm text-red-200">{error}</p> : null}
 
           <Button
             className="mt-6 h-12 w-full rounded-lg bg-[#25948e] text-base font-semibold text-white hover:bg-[#1f827c]"
             disabled={loading}
-            onClick={onSubmit}
+            onClick={otpSent ? onVerify : onSubmit}
           >
-            {loading ? "Continuing..." : "Continue"}
+            {loading ? "Continuing..." : otpSent ? "Verify OTP" : "Send OTP"}
           </Button>
         </Card>
       </div>

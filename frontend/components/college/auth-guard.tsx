@@ -5,7 +5,7 @@ import { type ReactNode, useEffect, useState } from "react";
 
 import { AUTH_STATE_EVENT, getMe } from "@/lib/auth-client";
 
-const publicRoutes = ["/about-us", "/guides", "/register"];
+const publicRoutes = ["/", "/about-us", "/guides", "/register"];
 
 export function AuthGuard({ children }: { children: ReactNode }) {
   const path = usePathname();
@@ -17,6 +17,9 @@ export function AuthGuard({ children }: { children: ReactNode }) {
     if (isPublicRoute) return;
 
     let active = true;
+    const search = window.location.search.slice(1);
+    const redirectPath = search ? `${path}?${search}` : path;
+    const registerPath = `/register?redirect=${encodeURIComponent(redirectPath)}`;
 
     const check = () => {
       getMe()
@@ -28,12 +31,12 @@ export function AuthGuard({ children }: { children: ReactNode }) {
           }
 
           setAuthState({ path, allowed: false });
-          router.replace(`/register?redirect=${encodeURIComponent(path)}`);
+          router.replace(registerPath);
         })
         .catch(() => {
           if (!active) return;
           setAuthState({ path, allowed: false });
-          router.replace(`/register?redirect=${encodeURIComponent(path)}`);
+          router.replace(registerPath);
         });
     };
 

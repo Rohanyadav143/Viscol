@@ -67,12 +67,13 @@ export const compareQuerySchema = z.object({
 
 export const applicationSchema = z.object({
   student_name: z.string().trim().min(2).max(120),
-  phone: z.string().trim().min(10).max(20),
+  phone: z.string().trim().regex(/^[6-9]\d{9}$/, "Mobile must be a valid 10-digit Indian number"),
   email: z.string().trim().email(),
   course: z.string().trim().min(1).max(120),
   city: z.string().trim().min(1).max(120),
   budget: z.number().int().positive(),
   preferred_college_id: z.number().int().positive().optional().nullable(),
+  preferred_college_name: z.string().trim().max(200).optional().nullable(),
   message: z.string().trim().max(2000).optional().nullable(),
 });
 
@@ -80,4 +81,8 @@ export const registerSchema = z.object({
   name: z.string().trim().min(2, "Name must be at least 2 characters").max(120),
   mobile: z.string().trim().regex(/^[6-9]\d{9}$/, "Mobile must be a valid 10-digit Indian number"),
   email: z.string().trim().toLowerCase().email("Email must be valid"),
+});
+
+export const verifyOtpSchema = registerSchema.extend({
+  otp: z.string().trim().regex(/^\d{6}$/, "OTP must be 6 digits"),
 });
