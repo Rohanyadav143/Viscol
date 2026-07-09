@@ -11,6 +11,8 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cityOptions, courseOptions } from "@/lib/college-data";
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+
 export default function ApplyPage() {
   const [form, setForm] = useState({
     name: "",
@@ -21,6 +23,71 @@ export default function ApplyPage() {
     city: "",
     preferredCollege: "",
   });
+  const [loading, setLoading] = useState(false);
+
+  const submitApplication = async () => {
+    const budget = Number(form.budget.replace(/[^\d]/g, ""));
+
+    if (!form.name.trim() || !form.phone.trim() || !form.email.trim() || !form.course || !form.city || !budget) {
+      toast.error("Please complete required fields");
+      return;
+    }
+
+    if (!/^[6-9]\d{9}$/.test(form.phone.trim())) {
+      toast.error("Enter a valid 10-digit mobile number");
+      return;
+    }
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
+      toast.error("Enter a valid email address");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/applications`, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          student_name: form.name.trim(),
+          phone: form.phone.trim(),
+          email: form.email.trim().toLowerCase(),
+          course: form.course,
+          budget,
+          city: form.city,
+          preferred_college_name: form.preferredCollege.trim() || null,
+        }),
+      });
+      const payload = await response.json();
+
+      if (!response.ok) {
+        const message =
+          payload?.error?.issues?.[0]?.message ||
+          payload?.error?.message ||
+          payload?.message ||
+          "Unable to submit admission request";
+        throw new Error(message);
+      }
+
+      toast.success("Admission request submitted successfully");
+      setForm({
+        name: "",
+        phone: "",
+        email: "",
+        course: "",
+        budget: "",
+        city: "",
+        preferredCollege: "",
+      });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Unable to submit admission request");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <AppLayout>
@@ -49,8 +116,10 @@ export default function ApplyPage() {
             <Field label="Mobile Number">
               <Input
                 placeholder="Enter your mobile number"
+                inputMode="numeric"
+                maxLength={10}
                 value={form.phone}
-                onChange={(event) => setForm((prev) => ({ ...prev, phone: event.target.value }))}
+                onChange={(event) => setForm((prev) => ({ ...prev, phone: event.target.value.replace(/\D/g, "") }))}
               />
             </Field>
             <Field label="Email Address">
@@ -116,24 +185,10 @@ export default function ApplyPage() {
 
           <Button
             className="mt-5 h-11 w-full"
-            onClick={() => {
-              if (!form.name || !form.phone || !form.email || !form.course) {
-                toast.error("Please complete required fields");
-                return;
-              }
-              toast.success("Admission request submitted successfully");
-              setForm({
-                name: "",
-                phone: "",
-                email: "",
-                course: "",
-                budget: "",
-                city: "",
-                preferredCollege: "",
-              });
-            }}
+            disabled={loading}
+            onClick={submitApplication}
           >
-            Get Admission Assistance
+            {loading ? "Submitting..." : "Get Admission Assistance"}
           </Button>
 
           <p className="mt-3 text-center text-xs text-muted-foreground">

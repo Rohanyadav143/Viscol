@@ -2,7 +2,7 @@
 
 import { Bookmark, Building2, MapPin, SlidersHorizontal, Star } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { CompareTray } from "@/components/college/compare-tray";
@@ -27,17 +27,12 @@ import { compareState, defaultSearchFilters, searchState, wishlistState, type Se
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
 export default function CollegesPage() {
-  const [filters, setFilters] = useState<SearchFilters>(defaultSearchFilters);
+  const [filters, setFilters] = useState<SearchFilters>(() => searchState.get());
   const [sortBy, setSortBy] = useState<SortOption>("recommended");
-  const [compareIds, setCompareIds] = useState<number[]>([]);
-  const [wishIds, setWishIds] = useState<number[]>([]);
+  const [compareIds, setCompareIds] = useState<number[]>(() => compareState.get());
+  const [wishIds, setWishIds] = useState<number[]>(() => wishlistState.get());
   const [apiColleges, setApiColleges] = useState<College[]>([]);
-
-  useEffect(() => {
-    setFilters(searchState.get());
-    setCompareIds(compareState.get());
-    setWishIds(wishlistState.get());
-  }, []);
+  const initialFiltersRef = useRef(filters);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -50,7 +45,17 @@ export default function CollegesPage() {
         return response.json();
       })
       .then((payload) => {
-        setApiColleges((payload.data || []).map(mapApiCollegeToUiCollege));
+        const colleges = (payload.data || []).map(mapApiCollegeToUiCollege);
+        setApiColleges(colleges);
+
+        if (
+          colleges.length > 0 &&
+          filterColleges(colleges, initialFiltersRef.current).length === 0 &&
+          !areSearchFiltersEqual(initialFiltersRef.current, defaultSearchFilters)
+        ) {
+          setFilters(defaultSearchFilters);
+          searchState.set(defaultSearchFilters);
+        }
       })
       .catch((error) => {
         if (error.name !== "AbortError") {
@@ -267,6 +272,19 @@ export default function CollegesPage() {
   );
 }
 
+function areSearchFiltersEqual(left: SearchFilters, right: SearchFilters) {
+  return (
+    left.course === right.course &&
+    left.state === right.state &&
+    left.city === right.city &&
+    left.budget === right.budget &&
+    left.placementPreference === right.placementPreference &&
+    left.scholarshipOnly === right.scholarshipOnly &&
+    left.collegeTypes.length === right.collegeTypes.length &&
+    left.collegeTypes.every((type) => right.collegeTypes.includes(type))
+  );
+}
+
 function mapApiCollegeToUiCollege(college: ApiCollege): College {
   const firstCourse = college.courses?.[0];
   const firstFee = college.fees?.[0] || firstCourse?.fees?.[0];
@@ -314,7 +332,7 @@ function mapApiCollegeToUiCollege(college: ApiCollege): College {
     affiliation: college.affiliation,
     campusAreaAcres: 0,
     establishedYear: college.established_year,
-    recruiters: firstPlacement?.top_recruiters || [],
+    recruiters: normalizeStringArray(firstPlacement?.top_recruiters),
     hostelFacilities: college.hostel?.facilities || [],
     budgetScore: annualCost < 120000 ? 5 : annualCost < 180000 ? 4 : annualCost < 260000 ? 3 : 2,
     reviews:
@@ -384,7 +402,17 @@ interface ApiPlacement {
   average_package: number;
   highest_package: number;
   placement_percentage: number;
-  top_recruiters: string[];
+  top_recruiters: string[] | string;
+}
+
+function normalizeStringArray(value?: string[] | string | null): string[] {
+  if (Array.isArray(value)) return value;
+  if (!value) return [];
+  const delimiter = value.includes("|") ? "|" : value.includes(",") ? "," : " ";
+  return value
+    .split(delimiter)
+    .map((item) => item.trim())
+    .filter(Boolean);
 }
 
 function CollegeListCard({

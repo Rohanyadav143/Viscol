@@ -191,7 +191,7 @@ export default function Index() {
             ) : (
               <Link href="/register">
                 <Button variant="outline" size="sm" className="border-white/20 bg-transparent text-[#f7efd9] hover:bg-white/10 hover:text-white">
-                  Register
+                  Login
                 </Button>
               </Link>
             )}
@@ -238,7 +238,7 @@ export default function Index() {
               ) : (
                 <Link href="/register" onClick={() => setMenuOpen(false)} className="pt-2">
                   <Button variant="outline" className="w-full border-white/20 bg-transparent text-[#f7efd9] hover:bg-white/10 hover:text-white">
-                    Register
+                    Login
                   </Button>
                 </Link>
               )}

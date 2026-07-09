@@ -26,9 +26,6 @@ export default function CollegeDetailPage() {
     const controller = new AbortController();
     const slug = params.slugs;
 
-    setLoading(true);
-    setActiveImage(0);
-
     fetch(`${API_BASE_URL}/api/colleges/${slug}`, { signal: controller.signal })
       .then(async (response) => {
         if (!response.ok) return null;
@@ -36,6 +33,7 @@ export default function CollegeDetailPage() {
         return mapApiCollegeToUiCollege(payload.data);
       })
       .then((data) => {
+        setActiveImage(0);
         setCollege(data);
       })
       .catch((error) => {
@@ -375,7 +373,7 @@ function mapApiCollegeToUiCollege(college: ApiCollege): College {
     affiliation: college.affiliation,
     campusAreaAcres: 0,
     establishedYear: college.established_year,
-    recruiters: firstPlacement?.top_recruiters || [],
+    recruiters: normalizeStringArray(firstPlacement?.top_recruiters),
     hostelFacilities: college.hostel?.facilities || [],
     budgetScore: annualCost < 120000 ? 5 : annualCost < 180000 ? 4 : annualCost < 260000 ? 3 : 2,
     reviews:
@@ -445,5 +443,15 @@ interface ApiPlacement {
   average_package: number;
   highest_package: number;
   placement_percentage: number;
-  top_recruiters: string[];
+  top_recruiters: string[] | string;
+}
+
+function normalizeStringArray(value?: string[] | string | null): string[] {
+  if (Array.isArray(value)) return value;
+  if (!value) return [];
+  const delimiter = value.includes("|") ? "|" : value.includes(",") ? "," : " ";
+  return value
+    .split(delimiter)
+    .map((item) => item.trim())
+    .filter(Boolean);
 }

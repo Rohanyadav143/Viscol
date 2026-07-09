@@ -17,6 +17,10 @@ export interface RegisterInput {
   email: string;
 }
 
+export interface VerifyOtpInput extends RegisterInput {
+  otp: string;
+}
+
 const authFetch = (path: string, init?: RequestInit) =>
   fetch(`${API_BASE_URL}${path}`, {
     ...init,
@@ -27,20 +31,45 @@ const authFetch = (path: string, init?: RequestInit) =>
     },
   });
 
-export async function register(input: RegisterInput): Promise<AuthUser> {
-  const response = await authFetch("/api/auth/register", {
+const getErrorMessage = (payload: unknown, fallback: string) => {
+  if (!payload || typeof payload !== "object") return fallback;
+  const data = payload as { error?: string | { message?: string; issues?: Array<{ message?: string }> }; message?: string };
+
+  if (typeof data.error === "string") return data.error;
+  if (data.error?.issues?.[0]?.message) return data.error.issues[0].message;
+  if (data.error?.message) return data.error.message;
+  if (data.message) return data.message;
+  return fallback;
+};
+
+export async function sendOtp(input: RegisterInput): Promise<void> {
+  const response = await authFetch("/api/auth/send-otp", {
     method: "POST",
     body: JSON.stringify(input),
   });
   const payload = await response.json();
 
   if (!response.ok) {
-    throw new Error(payload.error || payload.message || "Unable to continue");
+    throw new Error(getErrorMessage(payload, "Unable to continue"));
+  }
+}
+
+export async function verifyOtp(input: VerifyOtpInput): Promise<AuthUser> {
+  const response = await authFetch("/api/auth/verify-otp", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+  const payload = await response.json();
+
+  if (!response.ok) {
+    throw new Error(getErrorMessage(payload, "Unable to verify OTP"));
   }
 
   window.dispatchEvent(new Event(AUTH_STATE_EVENT));
   return payload.data;
 }
+
+export const register = verifyOtp;
 
 export async function getMe(): Promise<AuthUser | null> {
   const response = await authFetch("/api/auth/me");
@@ -48,7 +77,7 @@ export async function getMe(): Promise<AuthUser | null> {
 
   const payload = await response.json();
   if (!response.ok) {
-    throw new Error(payload.error || "Unable to load user");
+    throw new Error(getErrorMessage(payload, "Unable to load user"));
   }
 
   return payload.data;

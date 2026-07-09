@@ -21,20 +21,24 @@ export const getCookieValue = (req, name) => {
 export const getSessionToken = (req) => getCookieValue(req, SESSION_COOKIE);
 
 export const setSessionCookie = (res, token) => {
+  const isProduction = process.env.NODE_ENV === "production";
+
   res.cookie(SESSION_COOKIE, token, {
     httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
+    sameSite: isProduction ? "none" : "lax",
+    secure: isProduction,
     maxAge: SESSION_DURATION_MS,
     path: "/",
   });
 };
 
 export const clearSessionCookie = (res) => {
+  const isProduction = process.env.NODE_ENV === "production";
+
   res.clearCookie(SESSION_COOKIE, {
     httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
+    sameSite: isProduction ? "none" : "lax",
+    secure: isProduction,
     path: "/",
   });
 };
