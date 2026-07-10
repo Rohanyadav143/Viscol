@@ -3,7 +3,6 @@ import nodemailer from "nodemailer";
 
 import { prisma } from "../db.js";
 import { asyncHandler } from "../middleware/async-handler.js";
-// import { requireAuth } from "../middleware/auth-middleware.js"; Login is not required for this project, so auth middleware is not needed
 import { applicationSchema } from "../validators.js";
 
 export const applicationRouter = Router();
@@ -113,7 +112,6 @@ const sendApplicationToSheet = async (payload) => {
 
 applicationRouter.post(
   "/applications",
-  // requireAuth, Login is not required for this project, so auth middleware is not needed
   asyncHandler(async (req, res) => {
     const input = applicationSchema.parse(req.body);
     const application = await prisma.application.create({
